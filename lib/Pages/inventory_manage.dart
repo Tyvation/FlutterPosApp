@@ -199,12 +199,12 @@ class _InventoryManageState extends State<InventoryManage> {
   }
 
   void _addItemDialog(BuildContext context, MainProvider provider) {
-    final _formKey = GlobalKey<FormState>();
-    TextEditingController _categoryController = TextEditingController();
-    TextEditingController _nameController = TextEditingController();
-    TextEditingController _priceController = TextEditingController();
-    TextEditingController _barcodeController = TextEditingController();
-    TextEditingController _quantityController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    TextEditingController categoryController = TextEditingController();
+    TextEditingController nameController = TextEditingController();
+    TextEditingController priceController = TextEditingController();
+    TextEditingController barcodeController = TextEditingController();
+    TextEditingController quantityController = TextEditingController();
     file = PlatformFile(name: '', size: 0);
     double deviceHeight = MediaQuery.of(context).size.height;
     double deviceWidth = MediaQuery.of(context).size.width;
@@ -228,7 +228,7 @@ class _InventoryManageState extends State<InventoryManage> {
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Form(
-                  key: _formKey,
+                  key: formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -244,9 +244,9 @@ class _InventoryManageState extends State<InventoryManage> {
                         children: [
                           DottedBorder(
                             borderType: BorderType.RRect,
-                            radius: Radius.circular(10),
+                            radius: const Radius.circular(10),
                             color: Colors.grey,
-                            dashPattern: [10, 10],
+                            dashPattern: const [10, 10],
                             strokeWidth: 2,
                             child: Container(
                               width: 100, height: 100,
@@ -279,9 +279,9 @@ class _InventoryManageState extends State<InventoryManage> {
                             ),
                           ),
                           Container(
-                            constraints: BoxConstraints(maxWidth: 100),
-                            margin: EdgeInsets.only(left: 10),
-                            child: Text('Press the Square to select your image.')
+                            constraints: const BoxConstraints(maxWidth: 100),
+                            margin: const EdgeInsets.only(left: 10),
+                            child: const Text('Press the Square to select your image.')
                           )
                         ],
                       ),
@@ -291,7 +291,7 @@ class _InventoryManageState extends State<InventoryManage> {
                         Expanded(
                           flex: 2,
                           child: TextFormField(
-                            controller: _nameController,
+                            controller: nameController,
                             decoration: InputDecoration(
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                               isDense: true
@@ -305,7 +305,7 @@ class _InventoryManageState extends State<InventoryManage> {
                         Expanded(
                           flex: 2,
                           child: TextFormField(
-                            controller: _priceController,
+                            controller: priceController,
                             decoration: InputDecoration(
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                               isDense: true
@@ -328,7 +328,7 @@ class _InventoryManageState extends State<InventoryManage> {
                         Expanded(
                           flex: 2,
                           child: TextFormField(
-                            controller: _barcodeController,
+                            controller: barcodeController,
                             decoration: InputDecoration(
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                               isDense: true,
@@ -349,7 +349,7 @@ class _InventoryManageState extends State<InventoryManage> {
                         Expanded(
                           flex: 2,
                           child: DropdownMenu(
-                            controller: _categoryController,
+                            controller: categoryController,
                             width: 235,
                             label: const Text('Category'),
                             expandedInsets: const EdgeInsets.symmetric(horizontal: 0),
@@ -371,7 +371,7 @@ class _InventoryManageState extends State<InventoryManage> {
                         Expanded(
                           flex: 2,
                           child: TextFormField(
-                            controller: _quantityController,
+                            controller: quantityController,
                             decoration: InputDecoration(
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                               isDense: true,
@@ -391,17 +391,17 @@ class _InventoryManageState extends State<InventoryManage> {
                                 OutlinedButton(
                                   onPressed: () {
                                     Navigator.of(context).pop();
-                                  }, 
-                                  child: Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  },
                                   style: OutlinedButton.styleFrom(
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
+                                  ), 
+                                  child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
                                 ),
                                 const SizedBox(width: 10),
                                 FilledButton(
                                   onPressed: () async{
-                                    if(_formKey.currentState!.validate()){
-                                      if(provider.items.where((x)=>x['name']==_nameController.text).isNotEmpty){
+                                    if(formKey.currentState!.validate()){
+                                      if(provider.items.where((x)=>x['name']==nameController.text).isNotEmpty){
                                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                                           content: Text('Product name exists in the inventory'),
                                           duration: Duration(seconds: 3),
@@ -410,15 +410,15 @@ class _InventoryManageState extends State<InventoryManage> {
                                       File image;
                                       image = file.name == ''
                                         ? File(defaultImagePath)
-                                        : await saveImageFile(file, _nameController.text);
+                                        : await saveImageFile(file, nameController.text);
                                       provider.insertItem(
                                         Items(
-                                          name: _nameController.text,
-                                          price: double.parse(_priceController.text),
-                                          stock: int.fromEnvironment(_quantityController.text, defaultValue: 1),
+                                          name: nameController.text,
+                                          price: double.parse(priceController.text),
+                                          stock: int.fromEnvironment(quantityController.text, defaultValue: 1),
                                           imagePath: image.path,
-                                          category: _categoryController.text,
-                                          barCode: int.fromEnvironment(_barcodeController.text, defaultValue: -1),
+                                          category: categoryController.text,
+                                          barCode: int.fromEnvironment(barcodeController.text, defaultValue: -1),
                                         )
                                       );
                                       // ignore: use_build_context_synchronously
@@ -426,10 +426,10 @@ class _InventoryManageState extends State<InventoryManage> {
                                       }
                                     }
                                   },
-                                  child: Text('Confirm', style: TextStyle(fontWeight: FontWeight.bold)),
                                   style: FilledButton.styleFrom(
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                   ),
+                                  child: const Text('Confirm', style: TextStyle(fontWeight: FontWeight.bold)),
                                 )
                               ],
                             ),
