@@ -146,6 +146,7 @@ class _InventoryManageState extends State<InventoryManage> {
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                     padding: const EdgeInsets.symmetric(horizontal: 12),
                                   ),
+                                  // this changes alot?
                                 )
                               ],
                             ),
