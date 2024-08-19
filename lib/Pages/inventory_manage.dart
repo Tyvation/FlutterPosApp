@@ -216,7 +216,9 @@ class _InventoryManageState extends State<InventoryManage> {
                                       const Divider(height: 5),
                                       Material(
                                         child: InkWell(
-                                          onTap: (){},
+                                          onTap: (){
+                                            _itemEditor(context, myColorScheme, provider, i);
+                                          },
                                           hoverColor: myColorScheme.secondary.withOpacity(.2),
                                           splashColor: myColorScheme.primary.withOpacity(.2),
                                           borderRadius: BorderRadius.circular(5),
@@ -507,8 +509,28 @@ class _InventoryManageState extends State<InventoryManage> {
     );
   }
 
-  void _itemEditor(MainProvider provider, int index){
-    
+  void _itemEditor(BuildContext context, ColorScheme myColorScheme, MainProvider provider, int index){
+    double screenWidth = MediaQuery.of(context).size.width;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          insetPadding: EdgeInsets.only(left: screenWidth/13),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          child: Padding(
+            padding: const EdgeInsets.only(top:8, bottom: 8, right: 8),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.green,
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: myColorScheme.primary, width: 2)
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget _inventoryDashBoard(ColorScheme myColorScheme, dynamic numbers, String label, Color labelColor){
