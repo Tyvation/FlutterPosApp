@@ -141,9 +141,22 @@ class DatabaseHelper {
     Database db = await database;
     return await db.insert('items', item.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
   }
-  Future<int> deleteItem(int id) async {
+  Future<void> deleteItem(int id) async {
     Database db = await database;
-    return await db.delete('items', where: 'id= ?', whereArgs: [id]);
+    await db.delete('items', where: 'id= ?', whereArgs: [id]);
+    try{
+      await db.transaction((txn) async{
+        final items = await txn.query('items');
+        await txn.delete('items');
+        await txn.rawUpdate('UPDATE sqlite_sequence SET seq = 0 WHERE name = "items"');
+
+        for(var item in items){
+          await txn.insert('items', item);
+        }
+      });
+    } catch(e){
+      debugPrint('Error when deleting item : $e');
+    }
   }
   Future deleteAllItemRecords() async{
     Database db = await database;

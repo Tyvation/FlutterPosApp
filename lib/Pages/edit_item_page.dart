@@ -158,7 +158,7 @@ class _EditItemPageState extends State<EditItemPage> {
                                       DataCell(
                                         ConstrainedBox(
                                         constraints: const BoxConstraints(maxWidth: 80),
-                                        child: Text('${item[listText[j].toLowerCase()]}', overflow: TextOverflow.ellipsis,)
+                                        child: Text('${item[listText[j] == 'BarCode'? 'barCode': listText[j].toLowerCase()]}', overflow: TextOverflow.ellipsis,)
                                       )),
                                     DataCell(
                                       Row(

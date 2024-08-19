@@ -18,9 +18,10 @@ class InventoryManage extends StatefulWidget {
 }
 
 class _InventoryManageState extends State<InventoryManage> {
-  final List<int> _listWidth = [3,2,2,2];
-  final List<String> _listHeaders = ['Products', 'Price', 'Category', 'Stock'];
-  final List<String> _listTypes = ['name', 'price', 'category', 'stock'];
+  final List<int> _listWidth = [3,2,2,2,2];
+  final List<String> _listHeaders = ['Products', 'Price', 'Category', 'Stock', 'BarCode'];
+  final List<String> _listTypes = ['name', 'price', 'category', 'stock', 'barCode'];
+  final int _stockAlert = 1;
   late PlatformFile file;
   late String defaultImagePath;
 
@@ -90,6 +91,47 @@ class _InventoryManageState extends State<InventoryManage> {
                       color: myColorScheme.surface,
                       border: Border.all(color: myColorScheme.primary, width: 1.5),
                       borderRadius: const BorderRadius.all(Radius.circular(15)),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(flex:1, 
+                          child: _inventoryDashBoard(
+                            myColorScheme, 
+                            provider.items.length, 
+                            'Total Products',
+                            Colors.blueAccent
+                          )
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          flex: 1,
+                          child: _inventoryDashBoard(
+                            myColorScheme, 
+                            provider.items.map((e)=>e['category']).toSet().length, 
+                            'Categories',
+                            Colors.green
+                          )
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(flex:1, 
+                          child: _inventoryDashBoard(
+                            myColorScheme,
+                            'idk', 
+                            'Best Selling',
+                            Colors.deepPurple[400]!
+                          )
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(flex:1, 
+                          child: _inventoryDashBoard(
+                            myColorScheme, 
+                            provider.items.where((e)=>e['stock'] < _stockAlert).length,
+                            'Low Stocks',
+                            Colors.red[600]!
+                          )
+                        ),
+                        const Expanded(flex:1, child: SizedBox()),
+                      ],
                     ),
                   ),
                 ),
@@ -171,14 +213,33 @@ class _InventoryManageState extends State<InventoryManage> {
                                   //! Products
                                   for(int i=0; i<provider.items.length; i++)
                                     Column(children: [
-                                      const Divider(),
-                                      Row(children: [
-                                        for(int k=0; k<_listTypes.length; k++)
-                                          Expanded(
-                                            flex: _listWidth[k],
-                                            child: Text('${provider.items[i][_listTypes[k]]}', overflow: TextOverflow.ellipsis,)
-                                          )
-                                      ]),
+                                      const Divider(height: 5),
+                                      Material(
+                                        child: InkWell(
+                                          onTap: (){},
+                                          hoverColor: myColorScheme.secondary.withOpacity(.2),
+                                          splashColor: myColorScheme.primary.withOpacity(.2),
+                                          borderRadius: BorderRadius.circular(5),
+                                          child: SizedBox(
+                                            height: 30,
+                                            child: Row(children: [
+                                              for(int k=0; k<_listTypes.length; k++)
+                                                Expanded(
+                                                  flex: _listWidth[k],
+                                                  child: Text(
+                                                    '${provider.items[i][_listTypes[k]]}',
+                                                    overflow: TextOverflow.ellipsis, 
+                                                    style: TextStyle(
+                                                      color: (_listTypes[k] == 'stock' && provider.items[i]['stock'] < _stockAlert) 
+                                                        ? Colors.red[400] 
+                                                        : myColorScheme.onSurface
+                                                    ),
+                                                  )
+                                                )
+                                            ]),
+                                          ),
+                                        ),
+                                      )
                                     ])
                                 ]
                               ),
@@ -333,7 +394,7 @@ class _InventoryManageState extends State<InventoryManage> {
                               isDense: true,
                             ),
                             validator: (value) {
-                              if(value!.isNotEmpty && int.tryParse(value)==null){
+                              if(value!.isNotEmpty && !(int.tryParse(value)!=null && !(value.length<13 || value.length>14))){
                                 return 'Please enter valid number.';
                               }else{
                                 return null;
@@ -414,10 +475,10 @@ class _InventoryManageState extends State<InventoryManage> {
                                         Items(
                                           name: nameController.text,
                                           price: double.parse(priceController.text),
-                                          stock: int.fromEnvironment(quantityController.text, defaultValue: 1),
+                                          stock: quantityController.text.isNotEmpty && int.parse(quantityController.text)>0 ? int.parse(quantityController.text) : 1,
                                           imagePath: image.path,
-                                          category: categoryController.text,
-                                          barCode: int.fromEnvironment(barcodeController.text, defaultValue: -1),
+                                          category: categoryController.text.isEmpty ? 'no category' : categoryController.text,
+                                          barCode: barcodeController.text.isEmpty ? -1 : int.parse(barcodeController.text),
                                         )
                                       );
                                       // ignore: use_build_context_synchronously
@@ -443,6 +504,29 @@ class _InventoryManageState extends State<InventoryManage> {
           }
         );
       },
+    );
+  }
+
+  void _itemEditor(MainProvider provider, int index){
+    
+  }
+
+  Widget _inventoryDashBoard(ColorScheme myColorScheme, dynamic numbers, String label, Color labelColor){
+    return Container(
+      decoration: BoxDecoration(
+        color: myColorScheme.primary.withOpacity(.1),
+        borderRadius: BorderRadius.circular(10)
+      ),
+      height: double.infinity,
+      child: Stack(
+      children: [
+      Align(child: Text('$numbers',style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),textAlign: TextAlign.end)),
+      Positioned(
+        left: 10, top: 8,
+        child: Text(label, style: TextStyle(fontWeight: FontWeight.bold, color: labelColor), overflow: TextOverflow.ellipsis)
+        )
+      ]
+      )
     );
   }
 }
