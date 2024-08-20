@@ -510,24 +510,234 @@ class _InventoryManageState extends State<InventoryManage> {
   }
 
   void _itemEditor(BuildContext context, ColorScheme myColorScheme, MainProvider provider, int index){
-    double screenWidth = MediaQuery.of(context).size.width;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double screenHeight = MediaQuery.of(context).size.height;
+    file = PlatformFile(name: '', size: 0);
+    int currentPage = 0;
+    late List<Widget> pages = [];
+    late List<Offset> pageOffsets = [];
+    Offset toffset = Offset(0,0);
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          insetPadding: EdgeInsets.only(left: screenWidth/13),
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-          child: Padding(
-            padding: const EdgeInsets.only(top:8, bottom: 8, right: 8),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.green,
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: myColorScheme.primary, width: 2)
+    Widget productInfo(String label, dynamic display){
+      return Row(children: [
+        SizedBox(width: screenHeight/16),
+        Expanded(child: SizedBox(child: Text(label, style: TextStyle(color: myColorScheme.outline, fontWeight: FontWeight.bold)))),
+        Expanded(flex:2, child: Text('$display'))
+      ]);
+    }
+
+    Widget buttons(int index, String label, Function setStateb){
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start ,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 100),
+            decoration: BoxDecoration(
+              color: currentPage==index ? myColorScheme.primary : myColorScheme.secondary,
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: (){
+                  setStateb(() {
+                    currentPage = index;
+                    toffset = Offset(1, 0);
+                  });
+                },
+                hoverColor: Colors.white.withOpacity(.2),
+                borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)), 
+                child: SizedBox(
+                  height: screenHeight/20, width: screenWidth/12,
+                  child: Center(
+                    child: Text(
+                      label, 
+                      style: TextStyle(
+                        fontWeight: FontWeight.normal, 
+                        color: currentPage==index ? myColorScheme.onPrimary : myColorScheme.onSecondary
+                      )
+                    )
+                  ),
+                ),
               ),
             ),
           ),
+        ],
+      );
+    }
+
+    Widget detailPage(){
+      return Row(
+        children: [
+          Expanded(//! Info
+            flex: 2,
+            child: Column(
+              children: [
+                productInfo('Proudct', provider.items[index]['name']),
+                SizedBox(height: screenHeight/24),
+                productInfo('BarCode', provider.items[index]['barCode']),
+                SizedBox(height: screenHeight/24),
+                productInfo('Quantity', provider.items[index]['stock']),
+                SizedBox(height: screenHeight/24),
+                productInfo('Category', provider.items[index]['category']),
+              ],
+            ),
+          ),
+          Expanded(//! Image
+            flex: 1,
+            child: Column(
+              children: [
+                Align(
+                  alignment: const Alignment(0,0),
+                  child: DottedBorder(
+                    borderType: BorderType.RRect,
+                    radius: const Radius.circular(10),
+                    color: Colors.grey,
+                    dashPattern: const [10, 10],
+                    strokeWidth: 1.5,
+                    padding: const EdgeInsets.all(8),
+                    child: Container(
+                      width: 200, height: 200,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        image: DecorationImage(
+                          fit: BoxFit.cover,
+                          alignment: Alignment.center,
+                          image: FileImage(File(file.name == '' ? provider.items[index]['imagePath'] : file.path!))
+                        )
+                      ),
+                      child: Material(
+                        clipBehavior: Clip.antiAlias,
+                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.transparent,
+                        child: InkWell(
+                          hoverColor: Colors.red.withOpacity(.5),
+                          splashColor: Colors.orange.withOpacity(.7),
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: (){
+                            _pickFile(setState);
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          ),
+        ],
+      );
+    }
+
+    Widget testPage(){
+      return Container(color: Colors.blue);
+    }
+    pages = [detailPage(), testPage()];
+    pageOffsets = [Offset(0, 0), Offset(.1, 0)];
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog.fullscreen(
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: myColorScheme.surface,
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(color: myColorScheme.primary, width: 2)
+                  ),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 8),
+                      Row(children: [ //! NavigateButton
+                        const SizedBox(width: 10),
+                        buttons(0, 'Detail', setState),
+                        const SizedBox(width: 2),
+                        buttons(1, 'History', setState)
+                      ]),
+                      
+                      Stack(
+                        children:[
+                          const Divider(indent: 10, endIndent: 10, height: 1, thickness: 1.5),
+                          AnimatedPadding(
+                            duration: const Duration(milliseconds: 300),
+                            padding: EdgeInsets.only(left: 10+(screenWidth/12+2)*currentPage),
+                            curve: Curves.easeInOut,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Container(
+                                height: 4, width: screenWidth/12,
+                                decoration: BoxDecoration(
+                                  color: Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(width: 2, color: Colors.blueAccent)
+                                ),
+                              ),
+                            ),
+                          ),
+                        ]
+                      ),
+                      SizedBox(height: screenHeight/16),
+                      Expanded( //! Main Contents
+                        child: AnimatedSlide(
+                          duration: const Duration(milliseconds: 300),
+                          offset: toffset,
+                          onEnd: (){
+                            setState(() {
+                              toffset = Offset(0,0);
+                            });
+                          },
+                          child: pages[currentPage],
+                        )
+                      ),
+                      Row( //! Buttons
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: SizedBox(
+                              width: screenWidth/8,
+                              height: screenHeight/12,
+                              child: FilledButton.icon(
+                                onPressed: (){ Navigator.of(context).pop(); }, 
+                                label: const Text('Back', style: TextStyle( fontSize: 16)),
+                                icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                                style: FilledButton.styleFrom(
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  padding: const EdgeInsets.only(left:5, right:10),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Align(
+                              alignment: Alignment.bottomRight,
+                              child: SizedBox(
+                                width: screenWidth/8,
+                                height: screenHeight/12,
+                                child: OutlinedButton.icon(
+                                  onPressed: (){}, 
+                                  label: const Text('Edit', style: TextStyle( fontSize: 16)),
+                                  icon: const Icon(Icons.edit),
+                                  style: OutlinedButton.styleFrom(
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    padding: const EdgeInsets.only(left:5, right:10),
+                                  ),
+                                ),
+                              ),
+                            )
+                          )
+                        ]
+                      )
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
         );
       },
     );
