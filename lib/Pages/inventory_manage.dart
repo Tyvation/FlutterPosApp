@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
@@ -513,18 +514,16 @@ class _InventoryManageState extends State<InventoryManage> {
     final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
     file = PlatformFile(name: '', size: 0);
+    final formkey = GlobalKey<FormState>();
+    TextEditingController nameController = TextEditingController();
+    TextEditingController barCodeController = TextEditingController();
+    TextEditingController stockController = TextEditingController();
+    TextEditingController categoryController = TextEditingController();
+    TextEditingController priceController = TextEditingController();
     int currentPage = 0;
-    late List<Widget> pages = [];
-    late List<Offset> pageOffsets = [];
-    Offset toffset = Offset(0,0);
+    int previousPage = 0;
+    bool editing = false;
 
-    Widget productInfo(String label, dynamic display){
-      return Row(children: [
-        SizedBox(width: screenHeight/16),
-        Expanded(child: SizedBox(child: Text(label, style: TextStyle(color: myColorScheme.outline, fontWeight: FontWeight.bold)))),
-        Expanded(flex:2, child: Text('$display'))
-      ]);
-    }
 
     Widget buttons(int index, String label, Function setStateb){
       return Column(
@@ -533,20 +532,31 @@ class _InventoryManageState extends State<InventoryManage> {
           AnimatedContainer(
             duration: const Duration(milliseconds: 100),
             decoration: BoxDecoration(
-              color: currentPage==index ? myColorScheme.primary : myColorScheme.secondary,
-              borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
+              color: currentPage==index ? myColorScheme.primary : myColorScheme.surface,
+              border: currentPage==index ? Border.all(color: Colors.transparent) : Border.all(color: myColorScheme.primary),
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(10), 
+                topRight: const Radius.circular(10), 
+                bottomLeft: (index==0 && currentPage!=0) ? const Radius.circular(10) : Radius.zero,
+                bottomRight: (index==2 && currentPage!=2) ? const Radius.circular(10) : Radius.zero
+              ),
             ),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
                 onTap: (){
                   setStateb(() {
+                    previousPage = currentPage;
                     currentPage = index;
-                    toffset = Offset(1, 0);
                   });
                 },
                 hoverColor: Colors.white.withOpacity(.2),
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)), 
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(10), 
+                  topRight: const Radius.circular(10),
+                  bottomLeft: (index==0 && currentPage!=0) ? const Radius.circular(10) : Radius.zero,
+                  bottomRight: (index==2 && currentPage!=2) ? const Radius.circular(10) : Radius.zero
+                ), 
                 child: SizedBox(
                   height: screenHeight/20, width: screenWidth/12,
                   child: Center(
@@ -554,7 +564,7 @@ class _InventoryManageState extends State<InventoryManage> {
                       label, 
                       style: TextStyle(
                         fontWeight: FontWeight.normal, 
-                        color: currentPage==index ? myColorScheme.onPrimary : myColorScheme.onSecondary
+                        color: currentPage==index ? myColorScheme.onPrimary : myColorScheme.primary
                       )
                     )
                   ),
@@ -566,21 +576,82 @@ class _InventoryManageState extends State<InventoryManage> {
       );
     }
 
-    Widget detailPage(){
+    Widget productInfo(String label, dynamic display, TextEditingController controller){
+      double displaySize = 16;
+      return Row(crossAxisAlignment: CrossAxisAlignment.center,children: [
+        SizedBox(width: screenWidth/10),  
+        Expanded(
+          child: Container(
+            alignment: Alignment.centerLeft,
+            height: screenHeight/12,
+            child: Text(label, style: TextStyle(color: myColorScheme.outline, fontWeight: FontWeight.normal))
+          )
+        ),
+        Expanded(flex:2, 
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: editing==false
+              ? Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: Text('$display', style: TextStyle(fontSize: displaySize)),
+              )
+              : TextFormField(
+                controller: controller..text = '$display',
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(),
+                  label: Text(label),
+                  isDense: true,
+                  
+                  constraints: BoxConstraints(maxWidth: screenHeight/3),
+                ),
+                validator: (value) {
+                  switch (label){
+                    case 'Price': 
+                      if(value!.isEmpty){
+                        return 'Price can\'t be empty.';
+                      }else if(double.tryParse(value)==null){
+                        return 'Please enter valid number.';
+                      }else{return null;}
+                    case 'BarCode':
+                      if((value!.isNotEmpty && value!='-1') && !(int.tryParse(value)!=null && !(value.length<13 || value.length>14))){
+                        return 'Please enter valid number.';
+                      }else{return null;}
+                    case 'Quantity':
+                      if(value!.isNotEmpty && int.tryParse(value)==null){
+                        return 'Please enter valid number without float number.';
+                      }else if(int.parse(value)<0){
+                        return 'Quantity can\'t be less than 0';
+                      }else{return null;}
+                    default:
+                      return null;
+                  }
+                },
+              )
+            ),
+          )
+        )
+      ]);
+    }
+
+    Widget detailPage(int key, Function setState){
       return Row(
+        key: ValueKey(key),
         children: [
           Expanded(//! Info
             flex: 2,
-            child: Column(
-              children: [
-                productInfo('Proudct', provider.items[index]['name']),
-                SizedBox(height: screenHeight/24),
-                productInfo('BarCode', provider.items[index]['barCode']),
-                SizedBox(height: screenHeight/24),
-                productInfo('Quantity', provider.items[index]['stock']),
-                SizedBox(height: screenHeight/24),
-                productInfo('Category', provider.items[index]['category']),
-              ],
+            child: Form(
+              key: formkey,
+              child: Column(
+                children: [
+                  productInfo('Proudct', provider.items[index]['name'], nameController),
+                  productInfo('BarCode', provider.items[index]['barCode'], barCodeController),
+                  productInfo('Price', provider.items[index]['price'], priceController),
+                  productInfo('Category', provider.items[index]['category'], categoryController),
+                  productInfo('Quantity', provider.items[index]['stock'], stockController),
+                ],
+              ),
             ),
           ),
           Expanded(//! Image
@@ -588,7 +659,7 @@ class _InventoryManageState extends State<InventoryManage> {
             child: Column(
               children: [
                 Align(
-                  alignment: const Alignment(0,0),
+                  alignment: Alignment.centerLeft,
                   child: DottedBorder(
                     borderType: BorderType.RRect,
                     radius: const Radius.circular(10),
@@ -610,14 +681,16 @@ class _InventoryManageState extends State<InventoryManage> {
                         clipBehavior: Clip.antiAlias,
                         borderRadius: BorderRadius.circular(10),
                         color: Colors.transparent,
-                        child: InkWell(
+                        child: editing
+                        ? InkWell(
                           hoverColor: Colors.red.withOpacity(.5),
                           splashColor: Colors.orange.withOpacity(.7),
                           borderRadius: BorderRadius.circular(10),
                           onTap: (){
                             _pickFile(setState);
                           },
-                        ),
+                        )
+                        : const SizedBox()
                       ),
                     ),
                   ),
@@ -629,12 +702,17 @@ class _InventoryManageState extends State<InventoryManage> {
       );
     }
 
-    Widget testPage(){
-      return Container(color: Colors.blue);
+    Widget testPage1(int key){
+      return Container(key:ValueKey(key), color: editing ? Colors.blue : Colors.green);
     }
-    pages = [detailPage(), testPage()];
-    pageOffsets = [Offset(0, 0), Offset(.1, 0)];
-    showDialog(
+
+    Widget testPage2(int key){
+      return Container(key: ValueKey(key), color: Colors.red);
+    }
+
+    List<Widget> pages() => [detailPage(0, setState), testPage1(1), testPage2(2)];
+
+    showDialog( //! Main Things
       context: context,
       builder: (context) {
         return StatefulBuilder(
@@ -655,20 +733,21 @@ class _InventoryManageState extends State<InventoryManage> {
                         const SizedBox(width: 10),
                         buttons(0, 'Detail', setState),
                         const SizedBox(width: 2),
-                        buttons(1, 'History', setState)
+                        buttons(1, 'History', setState),
+                        const SizedBox(width: 2),
+                        buttons(2, 'IDK', setState)
                       ]),
-                      
                       Stack(
                         children:[
-                          const Divider(indent: 10, endIndent: 10, height: 1, thickness: 1.5),
+                          Divider(indent: 25, endIndent: 20, height: 0, thickness: 0.5, color: myColorScheme.primary),
                           AnimatedPadding(
-                            duration: const Duration(milliseconds: 300),
-                            padding: EdgeInsets.only(left: 10+(screenWidth/12+2)*currentPage),
+                            duration: const Duration(milliseconds: 200),
+                            padding: EdgeInsets.only(left: 10+(screenWidth/12+4)*currentPage),
                             curve: Curves.easeInOut,
                             child: Align(
                               alignment: Alignment.centerLeft,
                               child: Container(
-                                height: 4, width: screenWidth/12,
+                                height: 4, width: screenWidth/12+2,
                                 decoration: BoxDecoration(
                                   color: Colors.transparent,
                                   borderRadius: BorderRadius.circular(12),
@@ -681,15 +760,18 @@ class _InventoryManageState extends State<InventoryManage> {
                       ),
                       SizedBox(height: screenHeight/16),
                       Expanded( //! Main Contents
-                        child: AnimatedSlide(
-                          duration: const Duration(milliseconds: 300),
-                          offset: toffset,
-                          onEnd: (){
-                            setState(() {
-                              toffset = Offset(0,0);
-                            });
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          transitionBuilder: (child, animation) {
+                            final double r = currentPage>previousPage ? -1 : 1;
+                            return SlideTransition(
+                              position: Tween<Offset>(
+                                begin: animation.status == AnimationStatus.dismissed ? Offset(r,0) : Offset(-r,0), 
+                                end: Offset.zero).animate(animation), 
+                              child: child,
+                            );
                           },
-                          child: pages[currentPage],
+                          child: currentPage==0 ? detailPage(0, setState) : pages()[currentPage],
                         )
                       ),
                       Row( //! Buttons
@@ -697,38 +779,112 @@ class _InventoryManageState extends State<InventoryManage> {
                         children: [
                           Padding(
                             padding: const EdgeInsets.all(8.0),
-                            child: SizedBox(
-                              width: screenWidth/8,
-                              height: screenHeight/12,
-                              child: FilledButton.icon(
-                                onPressed: (){ Navigator.of(context).pop(); }, 
-                                label: const Text('Back', style: TextStyle( fontSize: 16)),
-                                icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                                style: FilledButton.styleFrom(
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  padding: const EdgeInsets.only(left:5, right:10),
-                                ),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(11),
+                                border: !editing ? Border.all(color: Colors.transparent) : Border.all(color: myColorScheme.primary),
+                                color: !editing ? myColorScheme.primary : Colors.transparent
                               ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Align(
-                              alignment: Alignment.bottomRight,
-                              child: SizedBox(
-                                width: screenWidth/8,
-                                height: screenHeight/12,
-                                child: OutlinedButton.icon(
-                                  onPressed: (){}, 
-                                  label: const Text('Edit', style: TextStyle( fontSize: 16)),
-                                  icon: const Icon(Icons.edit),
-                                  style: OutlinedButton.styleFrom(
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    padding: const EdgeInsets.only(left:5, right:10),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: (){ 
+                                    Navigator.of(context).pop();
+                                  },
+                                  borderRadius: BorderRadius.circular(10),
+                                  hoverColor: myColorScheme.onPrimary.withOpacity(.1),
+                                  child: SizedBox(
+                                    width: screenWidth/8,
+                                    height: screenHeight/12,
+                                    child: Row(mainAxisAlignment: MainAxisAlignment.center ,children: [
+                                      Icon(Icons.arrow_back_ios_new_rounded ,color: !editing ? myColorScheme.onPrimary : myColorScheme.primary),
+                                      //const SizedBox(width: 8),
+                                      Text(
+                                        'Back', 
+                                        style: TextStyle(
+                                          fontSize: 16, 
+                                          fontWeight: FontWeight.normal,
+                                          color: !editing ? myColorScheme.onPrimary : myColorScheme.primary)
+                                      )
+                                    ]),
                                   ),
                                 ),
                               ),
                             )
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(11),
+                                border: !editing ? Border.all(color: myColorScheme.primary) : Border.all(color: Colors.transparent),
+                                color: !editing ? Colors.transparent : myColorScheme.primary
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () async{ 
+                                    if(editing){
+                                      if(formkey.currentState!.validate()){
+                                        if(provider.items.where((x)=>x['name']==nameController.text).isNotEmpty){
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) {
+                                              return AlertDialog(
+                                                content: const Text('Product name exists in the inventory'),
+                                                actions: [FilledButton(onPressed: (){Navigator.of(context).pop();}, child: const Text('OK!'))],
+                                              );
+                                            },
+                                          );
+                                        }else{
+                                          File image;
+                                          image = file.name == ''
+                                            ? File(provider.items[index]['imagePath'])
+                                            : await saveImageFile(file, nameController.text);
+                                          provider.updateItems(
+                                            index+1, 
+                                            Items(
+                                              id: index+1,
+                                              name: nameController.text,
+                                              price: double.parse(priceController.text),
+                                              barCode: (barCodeController.text.isEmpty || int.parse(barCodeController.text)==-1) ? -1 : int.parse(barCodeController.text),
+                                              stock: int.parse(stockController.text),
+                                              imagePath: image.path,
+                                              category: categoryController.text.isEmpty ? provider.items[index]['category'] : categoryController.text
+                                            )
+                                          );
+                                          setState(() {
+                                            editing = !editing;
+                                          });
+                                        }
+                                      }
+                                    }else{
+                                      setState(() {
+                                        editing = !editing;
+                                      });
+                                    }
+                                  },
+                                  borderRadius: BorderRadius.circular(10),
+                                  hoverColor: myColorScheme.onPrimary.withOpacity(.1),
+                                  child: SizedBox(
+                                    width: screenWidth/8,
+                                    height: screenHeight/12,
+                                    child: Row(mainAxisAlignment: MainAxisAlignment.center ,children: [
+                                      Icon(editing ? Icons.save : Icons.edit, color: !editing ? myColorScheme.primary : myColorScheme.onPrimary),
+                                      Text(
+                                        editing ? 'Save' : 'Edit', 
+                                        style: TextStyle(
+                                          fontSize: 16, 
+                                          fontWeight: FontWeight.normal,
+                                          color: !editing ? myColorScheme.primary : myColorScheme.onPrimary)
+                                      )
+                                    ]),
+                                  ),
+                                ),
+                              ),
+                            ),
                           )
                         ]
                       )
