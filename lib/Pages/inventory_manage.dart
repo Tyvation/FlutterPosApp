@@ -175,24 +175,24 @@ class _InventoryManageState extends State<InventoryManage> {
                                     'Add Item', 
                                     style: TextStyle(
                                       color: myColorScheme.onPrimary, 
-                                      fontWeight: FontWeight.bold
                                     )
                                   ),
                                 ),
                                 const SizedBox(width: 10),
-                                OutlinedButton.icon(//! Filter Button
+                                FilledButton.icon(//! Filter Button
                                   onPressed: (){
                                     setState(() {
                                       openfilterWindow = !openfilterWindow;
                                     });
                                   }, 
                                   iconAlignment: IconAlignment.end,
-                                  icon: const Icon(Icons.filter_alt_outlined),
-                                  label: const Text('Filter'),
-                                  style: OutlinedButton.styleFrom(
-                                    side: BorderSide(color: myColorScheme.primary, width: 1.5),
+                                  icon: Icon(Icons.filter_alt_outlined, color: openfilterWindow ? myColorScheme.onPrimary : myColorScheme.primary),
+                                  label: Text('Filter',style: TextStyle(color: openfilterWindow ? myColorScheme.onPrimary : myColorScheme.primary)),
+                                  style: FilledButton.styleFrom(
+                                    side: BorderSide(color: openfilterWindow ?  Colors.transparent : myColorScheme.primary, width: 1.5),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                     padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    backgroundColor: openfilterWindow ? myColorScheme.primary : Colors.transparent
                                   ),
                                 )
                               ],
@@ -256,15 +256,15 @@ class _InventoryManageState extends State<InventoryManage> {
                                 ),
                               ),
                               Positioned( //! Filter Window
-                                  right: 0, top: 10,
-                                  child: AnimatedSwitcher(
-                                    duration: const Duration(milliseconds: 500),
-                                    //TODO : animation
-                                    child: openfilterWindow
-                                    ? _filterWindow(myColorScheme)
-                                    : const SizedBox()
-                                  )
+                                right: 0, top: 10,
+                                child: AnimatedSize(
+                                  duration: const Duration(milliseconds: 500),
+                                  reverseDuration: const Duration(milliseconds: 200),
+                                  clipBehavior: Clip.antiAlias,
+                                  curve: Curves.easeInOut,
+                                  child: _filterWindow(myColorScheme),
                                 )
+                              )
                             ],
                           )
                         )
@@ -282,15 +282,50 @@ class _InventoryManageState extends State<InventoryManage> {
 
   //! Filter
   Widget _filterWindow(ColorScheme myColorScheme){
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final TextEditingController searchController = TextEditingController();
+
     return AnimatedContainer(
-      duration: Duration(milliseconds: 500),
-      constraints: BoxConstraints(
-        maxHeight: 200, maxWidth: 200
-      ),
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      width: openfilterWindow ? screenWidth/4 : 0, 
+      height: openfilterWindow ? screenHeight/2 : 0,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        color: myColorScheme.primary
+        borderRadius: BorderRadius.circular(openfilterWindow ? 10 : 2),
+        color: myColorScheme.surfaceContainer,
+        border: Border.all(color: myColorScheme.primary, width: openfilterWindow ? 2 : 0)
       ),
+      child: FittedBox(
+        alignment: Alignment.topLeft,
+        child: Column(mainAxisAlignment: MainAxisAlignment.start,children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly,children: [
+              SizedBox(
+                width: screenWidth/3.5,
+                //height: screenWidth/40,
+                child: TextField(
+                  controller: searchController..text = 'what',
+                  decoration: InputDecoration(
+                    isDense: false,
+                    focusedBorder: const OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.blueAccent),
+                      borderRadius: BorderRadius.all(Radius.circular(10))
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: myColorScheme.primary),
+                      borderRadius: const BorderRadius.all(Radius.circular(10))
+                    ),
+                    filled: true,
+                    fillColor: myColorScheme.secondaryContainer,
+                  ),
+                ),
+              )
+            ]),
+          ),
+        ]),
+      )
     );
   }
 
@@ -660,7 +695,7 @@ class _InventoryManageState extends State<InventoryManage> {
                     border: const OutlineInputBorder(),
                     isDense: true,
                     constraints: BoxConstraints(maxWidth: screenHeight/3),
-                    suffix: label == 'Price' ? Text('\$') : null
+                    suffix: label == 'Price' ? const Text('\$') : null
                   ),
                 validator: (value) {
                   switch (label){
