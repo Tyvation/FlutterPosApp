@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +24,7 @@ class _InventoryManageState extends State<InventoryManage> {
   final int _stockAlert = 1;
   late PlatformFile file;
   late String defaultImagePath;
+  late bool openfilterWindow;
 
   void _pickFile(Function setstate) async{ 
     FilePickerResult? result = 
@@ -69,6 +69,7 @@ class _InventoryManageState extends State<InventoryManage> {
   }
 
   @override void initState() {
+    openfilterWindow = false;
     file = PlatformFile(name: '', size: 0);
     createFolder();
     createDefaultImage('lib/assets/images/istockphoto.png', 'istockphoto.png');
@@ -161,7 +162,7 @@ class _InventoryManageState extends State<InventoryManage> {
                             ),
                             Row(
                               children: [
-                                FilledButton(
+                                FilledButton(//! Add Item Button
                                   onPressed: (){
                                     _addItemDialog(context, provider);
                                   },
@@ -179,8 +180,12 @@ class _InventoryManageState extends State<InventoryManage> {
                                   ),
                                 ),
                                 const SizedBox(width: 10),
-                                OutlinedButton.icon(
-                                  onPressed: (){}, 
+                                OutlinedButton.icon(//! Filter Button
+                                  onPressed: (){
+                                    setState(() {
+                                      openfilterWindow = !openfilterWindow;
+                                    });
+                                  }, 
                                   iconAlignment: IconAlignment.end,
                                   icon: const Icon(Icons.filter_alt_outlined),
                                   label: const Text('Filter'),
@@ -195,58 +200,72 @@ class _InventoryManageState extends State<InventoryManage> {
                           ],
                         ),
                         Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 8, right: 8, top: 8),
-                            child: SingleChildScrollView(
-                              child: Column(
-                                children: [
-                                  //! Header
-                                  Row(children: [
-                                    for(var i in _listHeaders)
-                                      Expanded(
-                                        flex: _listWidth[_listHeaders.indexOf(i)], 
-                                        child: Text(i, style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: myColorScheme.outline
-                                        ))
-                                      )
-                                  ]),
-                                  //! Products
-                                  for(int i=0; i<provider.items.length; i++)
-                                    Column(children: [
-                                      const Divider(height: 5),
-                                      Material(
-                                        child: InkWell(
-                                          onTap: (){
-                                            _itemEditor(context, myColorScheme, provider, i);
-                                          },
-                                          hoverColor: myColorScheme.secondary.withOpacity(.2),
-                                          splashColor: myColorScheme.primary.withOpacity(.2),
-                                          borderRadius: BorderRadius.circular(5),
-                                          child: SizedBox(
-                                            height: 30,
-                                            child: Row(children: [
-                                              for(int k=0; k<_listTypes.length; k++)
-                                                Expanded(
-                                                  flex: _listWidth[k],
-                                                  child: Text(
-                                                    '${provider.items[i][_listTypes[k]]}',
-                                                    overflow: TextOverflow.ellipsis, 
-                                                    style: TextStyle(
-                                                      color: (_listTypes[k] == 'stock' && provider.items[i]['stock'] < _stockAlert) 
-                                                        ? Colors.red[400] 
-                                                        : myColorScheme.onSurface
-                                                    ),
-                                                  )
-                                                )
-                                            ]),
-                                          ),
-                                        ),
-                                      )
-                                    ])
-                                ]
+                          child: Stack(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(left: 8, right: 8, top: 8),
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    children: [
+                                      //! Header
+                                      Row(children: [
+                                        for(var i in _listHeaders)
+                                          Expanded(
+                                            flex: _listWidth[_listHeaders.indexOf(i)], 
+                                            child: Text(i, style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: myColorScheme.outline
+                                            ))
+                                          )
+                                      ]),
+                                      //! Products
+                                      for(int i=0; i<provider.items.length; i++)
+                                        Column(children: [
+                                          const Divider(height: 5),
+                                          Material(
+                                            child: InkWell(
+                                              onTap: (){
+                                                _itemEditor(context, myColorScheme, provider, i);
+                                              },
+                                              hoverColor: myColorScheme.secondary.withOpacity(.2),
+                                              splashColor: myColorScheme.primary.withOpacity(.2),
+                                              borderRadius: BorderRadius.circular(5),
+                                              child: SizedBox(
+                                                height: 30,
+                                                child: Row(children: [
+                                                  for(int k=0; k<_listTypes.length; k++)
+                                                    Expanded(
+                                                      flex: _listWidth[k],
+                                                      child: Text(
+                                                        '${provider.items[i][_listTypes[k]]}',
+                                                        overflow: TextOverflow.ellipsis, 
+                                                        style: TextStyle(
+                                                          color: (_listTypes[k] == 'stock' && provider.items[i]['stock'] < _stockAlert) 
+                                                            ? Colors.red[400] 
+                                                            : myColorScheme.onSurface
+                                                        ),
+                                                      )
+                                                    )
+                                                ]),
+                                              ),
+                                            ),
+                                          )
+                                        ])
+                                    ]
+                                  ),
+                                ),
                               ),
-                            ),
+                              Positioned( //! Filter Window
+                                  right: 0, top: 10,
+                                  child: AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 500),
+                                    //TODO : animation
+                                    child: openfilterWindow
+                                    ? _filterWindow(myColorScheme)
+                                    : const SizedBox()
+                                  )
+                                )
+                            ],
                           )
                         )
                       ],
@@ -261,6 +280,21 @@ class _InventoryManageState extends State<InventoryManage> {
     );
   }
 
+  //! Filter
+  Widget _filterWindow(ColorScheme myColorScheme){
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 500),
+      constraints: BoxConstraints(
+        maxHeight: 200, maxWidth: 200
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        color: myColorScheme.primary
+      ),
+    );
+  }
+
+  //! Adder
   void _addItemDialog(BuildContext context, MainProvider provider) {
     final formKey = GlobalKey<FormState>();
     TextEditingController categoryController = TextEditingController();
@@ -510,6 +544,7 @@ class _InventoryManageState extends State<InventoryManage> {
     );
   }
 
+  //! Editor
   void _itemEditor(BuildContext context, ColorScheme myColorScheme, MainProvider provider, int index){
     final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
@@ -520,6 +555,14 @@ class _InventoryManageState extends State<InventoryManage> {
     TextEditingController stockController = TextEditingController();
     TextEditingController categoryController = TextEditingController();
     TextEditingController priceController = TextEditingController();
+    List<dynamic> itemNames = [
+      provider.items[index]['name'],
+      provider.items[index]['barCode'], 
+      provider.items[index]['price'],
+      provider.items[index]['category'],
+      provider.items[index]['stock'],
+    ];
+    Set existCategories = provider.items.map((e)=>e['category']).toList().toSet();
     int currentPage = 0;
     int previousPage = 0;
     bool editing = false;
@@ -576,7 +619,7 @@ class _InventoryManageState extends State<InventoryManage> {
       );
     }
 
-    Widget productInfo(String label, dynamic display, TextEditingController controller){
+    Widget productInfo(String label, dynamic display, TextEditingController controller, int index){
       double displaySize = 16;
       return Row(crossAxisAlignment: CrossAxisAlignment.center,children: [
         SizedBox(width: screenWidth/10),  
@@ -597,17 +640,36 @@ class _InventoryManageState extends State<InventoryManage> {
                 padding: const EdgeInsets.only(left: 12),
                 child: Text('$display', style: TextStyle(fontSize: displaySize)),
               )
-              : TextFormField(
-                controller: controller..text = '$display',
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  label: Text(label),
-                  isDense: true,
-                  
-                  constraints: BoxConstraints(maxWidth: screenHeight/3),
-                ),
+              : label == 'Category'
+                ? DropdownMenu(
+                  controller: categoryController..text = '$display',
+                  expandedInsets: const EdgeInsets.symmetric(horizontal: 0),
+                  inputDecorationTheme: InputDecorationTheme(
+                    isDense: true,
+                    border: const OutlineInputBorder(),
+                    constraints: BoxConstraints(maxHeight: 40, maxWidth: screenHeight/3)
+                  ),
+                  dropdownMenuEntries: <DropdownMenuEntry<String>>[
+                    for(var i in existCategories)
+                      DropdownMenuEntry( value: i, label: i)
+                    ]
+                  )
+                : TextFormField(
+                  controller: controller..text = '$display',
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    isDense: true,
+                    constraints: BoxConstraints(maxWidth: screenHeight/3),
+                    suffix: label == 'Price' ? Text('\$') : null
+                  ),
                 validator: (value) {
                   switch (label){
+                    case 'Product':
+                      final items = provider.items.map((e)=>e['name']).toList();
+                      int namesInItems = items.where((e)=>e==value).length;
+                      if(namesInItems>=1 && items.indexOf(value)!=index){
+                        return 'Product name has been exist in inventory.';
+                      }else{return null;}
                     case 'Price': 
                       if(value!.isEmpty){
                         return 'Price can\'t be empty.';
@@ -645,11 +707,11 @@ class _InventoryManageState extends State<InventoryManage> {
               key: formkey,
               child: Column(
                 children: [
-                  productInfo('Proudct', provider.items[index]['name'], nameController),
-                  productInfo('BarCode', provider.items[index]['barCode'], barCodeController),
-                  productInfo('Price', provider.items[index]['price'], priceController),
-                  productInfo('Category', provider.items[index]['category'], categoryController),
-                  productInfo('Quantity', provider.items[index]['stock'], stockController),
+                  productInfo('Product', itemNames[0], nameController, index),
+                  productInfo('BarCode', itemNames[1], barCodeController, index),
+                  productInfo('Price', itemNames[2], priceController, index),
+                  productInfo('Category', itemNames[3], categoryController, index),
+                  productInfo('Quantity', itemNames[4], stockController, index),
                 ],
               ),
             ),
@@ -828,37 +890,30 @@ class _InventoryManageState extends State<InventoryManage> {
                                   onTap: () async{ 
                                     if(editing){
                                       if(formkey.currentState!.validate()){
-                                        if(provider.items.where((x)=>x['name']==nameController.text).isNotEmpty){
-                                          showDialog(
-                                            context: context,
-                                            builder: (context) {
-                                              return AlertDialog(
-                                                content: const Text('Product name exists in the inventory'),
-                                                actions: [FilledButton(onPressed: (){Navigator.of(context).pop();}, child: const Text('OK!'))],
-                                              );
-                                            },
-                                          );
-                                        }else{
-                                          File image;
-                                          image = file.name == ''
-                                            ? File(provider.items[index]['imagePath'])
-                                            : await saveImageFile(file, nameController.text);
-                                          provider.updateItems(
-                                            index+1, 
-                                            Items(
-                                              id: index+1,
-                                              name: nameController.text,
-                                              price: double.parse(priceController.text),
-                                              barCode: (barCodeController.text.isEmpty || int.parse(barCodeController.text)==-1) ? -1 : int.parse(barCodeController.text),
-                                              stock: int.parse(stockController.text),
-                                              imagePath: image.path,
-                                              category: categoryController.text.isEmpty ? provider.items[index]['category'] : categoryController.text
-                                            )
-                                          );
-                                          setState(() {
-                                            editing = !editing;
-                                          });
-                                        }
+                                        File image;
+                                        image = file.name == ''
+                                          ? File(provider.items[index]['imagePath'])
+                                          : await saveImageFile(file, nameController.text);
+                                        provider.updateItems(
+                                          provider.items[index]['id'],
+                                          Items(
+                                            id: index,
+                                            name: nameController.text,
+                                            price: double.parse(priceController.text),
+                                            barCode: (barCodeController.text.isEmpty || int.parse(barCodeController.text)==-1) ? -1 : int.parse(barCodeController.text),
+                                            stock: int.parse(stockController.text),
+                                            imagePath: image.path,
+                                            category: categoryController.text.isEmpty ? provider.items[index]['category'] : categoryController.text
+                                          )
+                                        );
+                                        setState(() {
+                                          itemNames[0] = nameController.text;
+                                          itemNames[1] = barCodeController.text;
+                                          itemNames[2] = priceController.text;
+                                          itemNames[3] = categoryController.text;
+                                          itemNames[4] = stockController.text;
+                                          editing = !editing;
+                                        });
                                       }
                                     }else{
                                       setState(() {

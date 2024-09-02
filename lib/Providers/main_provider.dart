@@ -60,6 +60,10 @@ class MainProvider with ChangeNotifier{
     await DatabaseHelper.instance.updateItem(id, item);
     loadItems();
   }
+  Future test() async{
+    _items = await DatabaseHelper.instance.test('stock', true);
+    notifyListeners();
+  }
 
   //! Listings
   Future<void> loadListings() async{

@@ -165,7 +165,7 @@ class DatabaseHelper {
   }
   Future updateItem(int id, Items item) async{
     Database db = await database;
-    await db.update('items', item.toMap(), where: 'id = ?', whereArgs: [item.id]);
+    await db.update('items', item.toMap(), where: 'id = ?', whereArgs: [id]);
   }
   Future<void> reorderItems(List<Map<String, dynamic>> items) async {
     Database db = await database;
@@ -181,6 +181,11 @@ class DatabaseHelper {
     } catch(e){
       debugPrint('Error reordering items : $e');
     }
+  }
+  Future<List<Map<String, dynamic>>> test(String type, bool order) async{
+    final ordering = order ? 'ASC': 'DESC';
+    Database db = await database;
+    return await db.query('items', orderBy: 'stock $ordering');
   }
 
   //! Listing Items

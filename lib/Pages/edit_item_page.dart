@@ -17,7 +17,6 @@ class _EditItemPageState extends State<EditItemPage> {
   int _currentIndex = 0;
   late String _selectedCate;
   final ScrollController _scrollController = ScrollController();
-  static const List<int> listRowFlex = [1,2,5,5,3,3];
 
   @override
   void initState() {
