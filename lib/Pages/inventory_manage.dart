@@ -24,6 +24,8 @@ class _InventoryManageState extends State<InventoryManage> {
   final int _stockAlert = 1;
   late PlatformFile file;
   late String defaultImagePath;
+  late String searchingText;
+  late List<String> selectedFilters;
   late bool openfilterWindow;
 
   void _pickFile(Function setstate) async{ 
@@ -71,6 +73,8 @@ class _InventoryManageState extends State<InventoryManage> {
   @override void initState() {
     openfilterWindow = false;
     file = PlatformFile(name: '', size: 0);
+    searchingText = '';
+    selectedFilters = [];
     createFolder();
     createDefaultImage('lib/assets/images/istockphoto.png', 'istockphoto.png');
     super.initState();
@@ -84,6 +88,13 @@ class _InventoryManageState extends State<InventoryManage> {
         padding: const EdgeInsets.only(top: 8, right: 8, bottom: 8),
         child: Consumer<MainProvider>(
           builder: (context, provider, child) {
+            List<Map<String, dynamic>> filteredItems = provider.items.where((item) {
+              bool matchesSearch = searchingText.isEmpty ||
+                  item['name'].toString().toLowerCase().contains(searchingText.toLowerCase()) ||
+                  item['category'].toString().toLowerCase().contains(searchingText.toLowerCase());
+              bool matchesCategory = selectedFilters.isEmpty || selectedFilters.contains(item['category']);
+              return matchesSearch && matchesCategory;
+            }).toList();
             return Column(
               children: [
                 Expanded(
@@ -219,13 +230,13 @@ class _InventoryManageState extends State<InventoryManage> {
                                           )
                                       ]),
                                       //! Products
-                                      for(int i=0; i<provider.items.length; i++)
+                                      for(int i=0; i<filteredItems.length; i++)
                                         Column(children: [
                                           const Divider(height: 5),
                                           Material(
                                             child: InkWell(
                                               onTap: (){
-                                                _itemEditor(context, myColorScheme, provider, i);
+                                                _itemEditor(context, myColorScheme, provider, filteredItems[i]['id']-1);
                                               },
                                               hoverColor: myColorScheme.secondary.withOpacity(.2),
                                               splashColor: myColorScheme.primary.withOpacity(.2),
@@ -240,7 +251,7 @@ class _InventoryManageState extends State<InventoryManage> {
                                                         '${provider.items[i][_listTypes[k]]}',
                                                         overflow: TextOverflow.ellipsis, 
                                                         style: TextStyle(
-                                                          color: (_listTypes[k] == 'stock' && provider.items[i]['stock'] < _stockAlert) 
+                                                          color: (_listTypes[k] == 'stock' && filteredItems[i]['stock'] < _stockAlert) 
                                                             ? Colors.red[400] 
                                                             : myColorScheme.onSurface
                                                         ),
@@ -262,7 +273,7 @@ class _InventoryManageState extends State<InventoryManage> {
                                   reverseDuration: const Duration(milliseconds: 200),
                                   clipBehavior: Clip.antiAlias,
                                   curve: Curves.easeInOut,
-                                  child: _filterWindow(myColorScheme),
+                                  child: _filterWindow(myColorScheme, setState),
                                 )
                               )
                             ],
@@ -281,51 +292,82 @@ class _InventoryManageState extends State<InventoryManage> {
   }
 
   //! Filter
-  Widget _filterWindow(ColorScheme myColorScheme){
+  Widget _filterWindow(ColorScheme myColorScheme, setFilterStae){
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
     final TextEditingController searchController = TextEditingController();
+    List<String> categories = Provider.of<MainProvider>(context, listen: false).items.map((e) => e['category'] as String).toSet().toList();
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
-      width: openfilterWindow ? screenWidth/4 : 0, 
-      height: openfilterWindow ? screenHeight/2 : 0,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(openfilterWindow ? 10 : 2),
-        color: myColorScheme.surfaceContainer,
-        border: Border.all(color: myColorScheme.primary, width: openfilterWindow ? 2 : 0)
-      ),
-      child: FittedBox(
-        alignment: Alignment.topLeft,
-        child: Column(mainAxisAlignment: MainAxisAlignment.start,children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly,children: [
-              SizedBox(
-                width: screenWidth/3.5,
-                //height: screenWidth/40,
-                child: TextField(
-                  controller: searchController..text = 'what',
-                  decoration: InputDecoration(
-                    isDense: false,
-                    focusedBorder: const OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.blueAccent),
-                      borderRadius: BorderRadius.all(Radius.circular(10))
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: myColorScheme.primary),
-                      borderRadius: const BorderRadius.all(Radius.circular(10))
-                    ),
-                    filled: true,
-                    fillColor: myColorScheme.secondaryContainer,
-                  ),
-                ),
-              )
-            ]),
+    return StatefulBuilder(
+      builder: (context, setFilterState) {
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          width: openfilterWindow ? screenWidth/4 : 0, 
+          height: openfilterWindow ? screenHeight/2 : 0,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(openfilterWindow ? 10 : 2),
+            color: myColorScheme.surfaceContainer,
+            border: Border.all(color: myColorScheme.primary, width: openfilterWindow ? 2 : 0)
           ),
-        ]),
-      )
+          child: FittedBox(
+            alignment: Alignment.topLeft,
+            child: Column(mainAxisAlignment: MainAxisAlignment.start,children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly,children: [
+                  SizedBox(
+                    width: screenWidth/3.5,
+                    child: TextField(
+                      controller: searchController,
+                      decoration: InputDecoration(
+                        isDense: false,
+                        focusedBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blueAccent),
+                          borderRadius: BorderRadius.all(Radius.circular(10))
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: myColorScheme.primary),
+                          borderRadius: const BorderRadius.all(Radius.circular(10))
+                        ),
+                        filled: true,
+                        fillColor: myColorScheme.secondaryContainer,
+                        hintText: 'Search Item...',
+                        suffixIcon: Icon(Icons.search, color: myColorScheme.primary),
+                      ),
+                      onChanged: (value) {
+                        setFilterState((){
+                          searchingText = value;
+                        });
+                      },
+                    ),
+                  )
+                ]),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: categories.map((category) {
+                  return FilterChip(
+                    label: Text(category),
+                    selected: selectedFilters.contains(category),
+                    onSelected: (selected) {
+                      setFilterState((){
+                        if (selected) {
+                          selectedFilters.add(category);
+                        } else {
+                          selectedFilters.remove(category);
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+            ]),
+          )
+        );
+      }
     );
   }
 
@@ -341,12 +383,7 @@ class _InventoryManageState extends State<InventoryManage> {
     double deviceHeight = MediaQuery.of(context).size.height;
     double deviceWidth = MediaQuery.of(context).size.width;
     
-    List<String> dropDownCategories = [];
-    for(var i in provider.items){
-      if(!dropDownCategories.contains(i['category'])){
-        dropDownCategories.add(i['category']);
-      }
-    }
+    List<String> dropDownCategories = List.from(provider.items.map((e)=>e['category']).toSet());
     
     showDialog(
       context: context,
@@ -483,7 +520,7 @@ class _InventoryManageState extends State<InventoryManage> {
                           child: DropdownMenu(
                             controller: categoryController,
                             width: 235,
-                            label: const Text('Category'),
+                            //label: const Text('Category'),
                             expandedInsets: const EdgeInsets.symmetric(horizontal: 0),
                             inputDecorationTheme: InputDecorationTheme(
                               isDense: true,
