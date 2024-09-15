@@ -4,7 +4,7 @@ import '../Models/clients.dart';
 import '../Models/items.dart';
 import '../Models/listings.dart';
 
-class MainProvider with ChangeNotifier{
+class MainProvider extends ChangeNotifier {
   final db = DatabaseHelper.instance;
 
   List<Map<String, dynamic>> _clients = [];
@@ -15,32 +15,32 @@ class MainProvider with ChangeNotifier{
   List<Map<String, dynamic>> get items => List.from(_items);
   List<Map<String, dynamic>> get listings => List.from(_listings);
 
-  MainProvider(){
+  MainProvider() {
     loadClients();
     loadItems();
     loadListings();
   }
 
   //! Clients
-  Future<void> loadClients() async{
+  Future<void> loadClients() async {
     _clients = await db.queryAllClients();
     notifyListeners();
   }
-  Future<void> insertClient(Clients newClient) async{
+  Future<void> insertClient(Clients newClient) async {
     await db.insertClient(newClient);
     loadClients();
   }
-  Future<void> clearAllClient() async{
+  Future<void> clearAllClient() async {
     await db.deleteAllClientRecords();
     loadClients();
   }
 
   //! Items
-  Future<void> loadItems() async{
+  Future<void> loadItems() async {
     _items = await db.queryAllItems();
     notifyListeners();
   }
-  Future<void> insertItem(Items newItem) async{
+  Future<void> insertItem(Items newItem) async {
     await db.insertItem(newItem);
     loadItems();
   }
@@ -48,40 +48,40 @@ class MainProvider with ChangeNotifier{
     await db.deleteItem(id);
     loadItems();
   }
-  Future<void> clearAllItems() async{
+  Future<void> clearAllItems() async {
     await db.deleteAllItemRecords();
     loadItems();
   }
-  Future reorderItems(List<Map<String, dynamic>> items) async{
+  Future reorderItems(List<Map<String, dynamic>> items) async {
     await DatabaseHelper.instance.reorderItems(items);
     loadItems();
   }
-  Future updateItems(int id, Items item) async{
+  Future updateItems(int id, Items item) async {
     await DatabaseHelper.instance.updateItem(id, item);
     loadItems();
   }
-  Future test() async{
+  Future test() async {
     _items = await DatabaseHelper.instance.test('stock', true);
     notifyListeners();
   }
 
   //! Listings
-  Future<void> loadListings() async{
+  Future<void> loadListings() async {
     _listings = await db.queryAllListings();
     notifyListeners();
   }
-  Future<void> insertListings(Listings newListing) async{
+  Future<void> insertListings(Listings newListing) async {
     await db.insertListing(newListing);
     loadListings();
   }
-  Future<void> updateListings(String name, Listings listing) async{
+  Future<void> updateListings(String name, Listings listing) async {
     await db.updateListings(name, listing.toMap());
     loadListings();
   }
   Future<void> deleteListings(int id) async {
     await db.deleteListing(id);
     _listings = await db.queryAllListings();
-    _listings = _listings.map((item){
+    _listings = _listings.map((item) {
       Map<String, dynamic> newItem = Map.from(item);
       newItem.remove('id');
       return newItem;
@@ -91,7 +91,7 @@ class MainProvider with ChangeNotifier{
 
     loadListings();
   }
-  Future<void> clearAllListings() async{
+  Future<void> clearAllListings() async {
     await db.deleteAllListingRecords();
     loadListings();
   }

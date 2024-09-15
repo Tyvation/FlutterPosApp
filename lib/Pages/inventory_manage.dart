@@ -248,7 +248,7 @@ class _InventoryManageState extends State<InventoryManage> {
                                                     Expanded(
                                                       flex: _listWidth[k],
                                                       child: Text(
-                                                        '${provider.items[i][_listTypes[k]]}',
+                                                        '${provider.items[filteredItems[i]['id']-1][_listTypes[k]]}',
                                                         overflow: TextOverflow.ellipsis, 
                                                         style: TextStyle(
                                                           color: (_listTypes[k] == 'stock' && filteredItems[i]['stock'] < _stockAlert) 
@@ -261,7 +261,8 @@ class _InventoryManageState extends State<InventoryManage> {
                                               ),
                                             ),
                                           )
-                                        ])
+                                        ]
+                                      ),
                                     ]
                                   ),
                                 ),
@@ -273,7 +274,7 @@ class _InventoryManageState extends State<InventoryManage> {
                                   reverseDuration: const Duration(milliseconds: 200),
                                   clipBehavior: Clip.antiAlias,
                                   curve: Curves.easeInOut,
-                                  child: _filterWindow(myColorScheme, setState),
+                                  child: _filterWindow(myColorScheme),
                                 )
                               )
                             ],
@@ -292,82 +293,76 @@ class _InventoryManageState extends State<InventoryManage> {
   }
 
   //! Filter
-  Widget _filterWindow(ColorScheme myColorScheme, setFilterStae){
+  Widget _filterWindow(ColorScheme myColorScheme){
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
-    final TextEditingController searchController = TextEditingController();
     List<String> categories = Provider.of<MainProvider>(context, listen: false).items.map((e) => e['category'] as String).toSet().toList();
 
-    return StatefulBuilder(
-      builder: (context, setFilterState) {
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          width: openfilterWindow ? screenWidth/4 : 0, 
-          height: openfilterWindow ? screenHeight/2 : 0,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(openfilterWindow ? 10 : 2),
-            color: myColorScheme.surfaceContainer,
-            border: Border.all(color: myColorScheme.primary, width: openfilterWindow ? 2 : 0)
-          ),
-          child: FittedBox(
-            alignment: Alignment.topLeft,
-            child: Column(mainAxisAlignment: MainAxisAlignment.start,children: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly,children: [
-                  SizedBox(
-                    width: screenWidth/3.5,
-                    child: TextField(
-                      controller: searchController,
-                      decoration: InputDecoration(
-                        isDense: false,
-                        focusedBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.blueAccent),
-                          borderRadius: BorderRadius.all(Radius.circular(10))
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: myColorScheme.primary),
-                          borderRadius: const BorderRadius.all(Radius.circular(10))
-                        ),
-                        filled: true,
-                        fillColor: myColorScheme.secondaryContainer,
-                        hintText: 'Search Item...',
-                        suffixIcon: Icon(Icons.search, color: myColorScheme.primary),
-                      ),
-                      onChanged: (value) {
-                        setFilterState((){
-                          searchingText = value;
-                        });
-                      },
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      width: openfilterWindow ? screenWidth/4 : 0, 
+      height: openfilterWindow ? screenHeight/2 : 0,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(openfilterWindow ? 10 : 2),
+        color: myColorScheme.surfaceContainer,
+        border: Border.all(color: myColorScheme.primary, width: openfilterWindow ? 2 : 0)
+      ),
+      child: FittedBox(
+        alignment: Alignment.topLeft,
+        child: Column(mainAxisAlignment: MainAxisAlignment.start,children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly,children: [
+              SizedBox(
+                width: screenWidth/3.5,
+                child: TextField( //! Search Bar
+                  decoration: InputDecoration(
+                    isDense: false,
+                    focusedBorder: const OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.blueAccent),
+                      borderRadius: BorderRadius.all(Radius.circular(10))
                     ),
-                  )
-                ]),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: categories.map((category) {
-                  return FilterChip(
-                    label: Text(category),
-                    selected: selectedFilters.contains(category),
-                    onSelected: (selected) {
-                      setFilterState((){
-                        if (selected) {
-                          selectedFilters.add(category);
-                        } else {
-                          selectedFilters.remove(category);
-                        }
-                      });
-                    },
-                  );
-                }).toList(),
-              ),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: myColorScheme.primary),
+                      borderRadius: const BorderRadius.all(Radius.circular(10))
+                    ),
+                    filled: true,
+                    fillColor: myColorScheme.secondaryContainer,
+                    hintText: 'Search Item...',
+                    suffixIcon: Icon(Icons.search, color: myColorScheme.primary),
+                  ),
+                  onChanged: (value) {
+                    setState((){
+                      searchingText = value;
+                    });
+                  },
+                ),
+              )
             ]),
-          )
-        );
-      }
+          ),
+          const SizedBox(height: 10),
+          Wrap( //! Category Filter
+            spacing: 8,
+            runSpacing: 8,
+            children: categories.map((category) {
+              return FilterChip(
+                label: Text(category),
+                selected: selectedFilters.contains(category),
+                onSelected: (selected) {
+                  setState((){
+                    if (selected) {
+                      selectedFilters.add(category);
+                    } else {
+                      selectedFilters.remove(category);
+                    }
+                  });
+                },
+              );
+            }).toList(),
+          ),
+        ]),
+      )
     );
   }
 
