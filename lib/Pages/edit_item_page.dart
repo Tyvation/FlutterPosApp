@@ -1,7 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../Sections/dialog_helper.dart';
+import '../Components/dialog_helper.dart';
 import '../Pages/add_item_page.dart';
 import '../Providers/main_provider.dart';
 

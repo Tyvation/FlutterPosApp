@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:invoice_app/Sections/dialog_helper.dart';
+import 'package:invoice_app/Components/dialog_helper.dart';
 import 'package:provider/provider.dart';
 import '../Models/listings.dart';
 import '../Providers/main_provider.dart';
@@ -31,11 +31,6 @@ class _ItemListDisplayState extends State<ItemListDisplay> {
     searchedItems = filteredItems;
     super.initState();
   }
-
-  // @override
-  // void didChangeDependencies() {
-  //   super.didChangeDependencies();
-  // }
 
   @override
   Widget build(BuildContext context){

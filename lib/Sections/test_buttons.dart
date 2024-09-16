@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../DataBase/database_helper.dart';
 import '../Providers/main_provider.dart';
-import 'dialog_helper.dart';
+import '../Components/dialog_helper.dart';
 
 class TestButton extends StatefulWidget {
   const TestButton({super.key});
@@ -60,7 +60,7 @@ class _TestButtonState extends State<TestButton> {
           testButton('Checking',
             Icons.brightness_1_outlined,
             () async{
-              await DialogHelper.checkingDialog(context);
+              //await DialogHelper.checkingDialog(context);
             }
           ),
         ],

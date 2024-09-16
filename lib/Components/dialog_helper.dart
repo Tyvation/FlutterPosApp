@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:invoice_app/Models/items.dart';
-import 'package:invoice_app/Sections/test_buttons.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import '../Providers/main_provider.dart';
@@ -298,26 +297,7 @@ class DialogHelper{
         );
       }
     );
-  }
 
-  static Future checkingDialog(BuildContext context) async{
-    return showDialog(
-      context: context, 
-      builder: (context){
-        return Dialog(
-          clipBehavior: Clip.antiAlias,
-          insetPadding: const EdgeInsets.all(100),
-          child: Column(
-            children: [
-              Container(
-                height: 50,
-                color: Colors.green,
-              ),
-            ],
-          ),
-        );
-      }
-    );
+
   }
-  
 }
