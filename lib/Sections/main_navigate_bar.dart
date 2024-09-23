@@ -22,11 +22,10 @@ class MainNavigateBar extends StatefulWidget {
 
 class _MainNavigateBarState extends State<MainNavigateBar> {
   int _currentIndex=1;
-  List<String> pageName = ['Home', 'Pos', 'Edit', 'Reorder','Inventory\nManage', 'Dash\nBoard', 'Histories'];
+  List<String> pageName = ['Home', 'Pos', 'Reorder','Inventory\nManage', 'Dash\nBoard', 'Histories'];
   List<IconData> pageIcon = [
     Icons.home, 
     Icons.point_of_sale, 
-    Icons.edit, 
     Icons.view_list_rounded, 
     Icons.inventory_outlined,
     Icons.bar_chart_outlined,
@@ -35,7 +34,6 @@ class _MainNavigateBarState extends State<MainNavigateBar> {
   List<Widget> pageWidget = const [
     TestHomePage(), 
     PosPage() ,
-    EditItemPage(), 
     EditItemOrderPage(), 
     InventoryManage(),
     DashBoardPage(),
